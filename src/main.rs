@@ -182,6 +182,14 @@ impl CompareWorker {
         while let Some(entry) = src_dir.next_entry().await? {
             if let Some(tgt_entry) = tgt_dir_index.get(&entry.file_name()) {
                 dbg!(format!("Object already exists. Path: {}", tgt_entry.path().display()));
+                if entry.file_type().await?.is_dir() {
+                    if tgt_entry.file_type().await?.is_dir() {
+                        self.queue_existing_dir(entry.path(), tgt_entry.path()).await;
+                    } else {
+                        eprintln!("Cannot copy directory because there is a file with the same name.\
+                        Directory: {}, File: {}", entry.path().display(), tgt_entry.path().display());
+                    }
+                }
             } else {
                 self.queue_object_for_copy(entry, tgt_path.to_path_buf()).await?;
             }
@@ -191,12 +199,17 @@ impl CompareWorker {
         Ok(())
     }
 
-    async fn queue_object_for_copy(&mut self, entry: DirEntry, tgt_folder: PathBuf) -> std::io::Result<()> {
-        if !self.recursive {
-            return Ok(());
+    async fn queue_existing_dir(&mut self, src_folder: PathBuf, tgt_folder: PathBuf) {
+        if self.recursive {
+            self.dir_counter.push();
+            self.cmp_tx.send((src_folder, tgt_folder))
+                .await
+                .expect("Failed to queue a directory");
         }
+    }
 
-        if entry.file_type().await?.is_dir() {
+    async fn queue_object_for_copy(&mut self, entry: DirEntry, tgt_folder: PathBuf) -> std::io::Result<()> {
+        if self.recursive && entry.file_type().await?.is_dir() {
             self.dir_counter.push();
         }
         self.copy_tx.send((entry, tgt_folder))
