@@ -20,5 +20,5 @@ This project demonstrates how to use `tokio::fs` for asynchronous file operation
 ### Example
 
 ```sh
-cargo run -- --recursive --mkpath --source /path/to/source --target /path/to/target
+cargo run -- --recursive --mkpath /path/to/source /path/to/target
 ```
