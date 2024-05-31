@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(author, about, long_about = None)]
@@ -19,7 +20,7 @@ struct Args {
     target: String,
 }
 
-fn mk_target_dir(p: &std::path::Path) {
+fn mk_target_dir(p: &Path) {
     if p.exists() {
         if p.is_file() {
             panic!("Cannot create target dir. Part of the path is a file. File path: {}", p.display());
@@ -38,7 +39,7 @@ fn mk_target_dir(p: &std::path::Path) {
         panic!("Cannot create target dir. Path: {}, Error: {}", p.display(), e);
     }
 }
-fn mkpath(p: &std::path::Path) {
+fn mkpath(p: &Path) {
     if p.exists() {
         if p.is_file() {
             panic!("Cannot create target path. Part of the path is a file. File path: {}", p.display());
@@ -53,7 +54,7 @@ fn mkpath(p: &std::path::Path) {
     }
 }
 
-async fn copy_object(entry: tokio::fs::DirEntry, tgt_folder: std::path::PathBuf) -> std::io::Result<()> {
+async fn copy_object(entry: tokio::fs::DirEntry, tgt_folder: PathBuf) -> std::io::Result<()> {
     let src_path = entry.path();
     let tgt_path = tgt_folder.join(entry.file_name());
     dbg!(format!("Copying {} to {}", src_path.display(), tgt_path.display()));
@@ -74,7 +75,7 @@ async fn copy_dir(src_path: &std::path::Path, tgt_path: &std::path::Path) -> std
     Ok(())
 }
 */
-async fn compare_and_copy_dir(src_path: &std::path::Path, tgt_path: &std::path::Path) -> std::io::Result<()> {
+async fn compare_and_copy_dir(src_path: &Path, tgt_path: &Path) -> std::io::Result<()> {
     let src_dir = tokio::fs::read_dir(src_path);
     let tgt_dir = tokio::fs::read_dir(tgt_path);
 
@@ -100,8 +101,8 @@ async fn compare_and_copy_dir(src_path: &std::path::Path, tgt_path: &std::path::
 
 fn main() {
     let args = Args::parse();
-    let src_path = std::path::Path::new(&args.source);
-    let tgt_path = std::path::Path::new(&args.target);
+    let src_path = Path::new(&args.source);
+    let tgt_path = Path::new(&args.target);
 
     println!("{args:?}");
 
